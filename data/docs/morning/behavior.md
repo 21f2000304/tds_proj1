@@ -1,0 +1,2 @@
+
+# Social reality agreement.

@@ -10,7 +10,7 @@ RUN sh /uv-installer.sh && rm /uv-installer.sh
 # Install FastAPI and Uvicorn
 RUN pip install fastapi uvicorn
 
-# Ensure the installed binary is on the `PATH`
+# Ensure the installed binary is on the PATH
 ENV PATH="/root/.local/bin:$PATH"
 
 # Set up the application directory
@@ -18,6 +18,9 @@ WORKDIR /app
 
 # Copy application files
 COPY app.py /app
-
-# Explicitly set the correct binary path and use `sh -c`
-CMD ["/root/.local/bin/uv", "run", "app.py"]
+COPY evaluate.py /app
+COPY datagen.py /app
+COPY tasksA.py /app
+COPY tasksB.py /app
+# Explicitly set the correct binary path and use sh -c
+CMD ["/root/.local/bin/uv", "run", "app.py"]

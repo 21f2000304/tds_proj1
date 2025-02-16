@@ -2,12 +2,17 @@ import sqlite3
 import subprocess
 from dateutil.parser import parse
 from datetime import datetime
+from fastapi import HTTPException
 import json
 from pathlib import Path
 import os
+import time
 import requests
 from scipy.spatial.distance import cosine
 from dotenv import load_dotenv
+import httpx
+import numpy as np
+from sklearn.metrics.pairwise import cosine_similarity
 
 load_dotenv()
 
@@ -28,12 +33,22 @@ def A1(email="21f2000304@ds.study.iitm.ac.in"):
         raise HTTPException(status_code=500, detail=f"Error: {e.stderr}")
 # A1()
 def A2(prettier_version="prettier@3.4.2", filename="/data/format.md"):
-    command = [r"C:\Program Files\nodejs\npx.cmd", prettier_version, "--write", filename]
+    """Formats the given markdown file using the specified Prettier version."""
+    command = ["npx", prettier_version, "--write", filename]
     try:
-        subprocess.run(command, check=True)
+        subprocess.run(command, check=True, shell=True)
         print("Prettier executed successfully.")
+        
+        # Ensure the changes are written before proceeding
+        time.sleep(1)
+        
+        with open(filename, "r", encoding="utf-8") as f:
+            content = f.read()
+            print("Formatted content:")
+            print(content)
     except subprocess.CalledProcessError as e:
         print(f"An error occurred: {e}")
+
 
 def A3(filename='/data/dates.txt', targetfile='/data/dates-wednesdays.txt', weekday=2):
     input_file = filename
@@ -213,7 +228,68 @@ def get_embedding(text):
     response.raise_for_status()
     return response.json()["data"][0]["embedding"]
 
+# def A9(filename='/data/comments.txt', output_filename='/data/comments-similar.txt'):
+#     # Read comments
+#     with open(filename, 'r') as f:
+#         comments = [line.strip() for line in f.readlines()]
+
+#     # Get embeddings for all comments
+#     embeddings = [get_embedding(comment) for comment in comments]
+
+#     # Find the most similar pair
+#     min_distance = float('inf')
+#     most_similar = (None, None)
+
+#     for i in range(len(comments)):
+#         for j in range(i + 1, len(comments)):
+#             distance = cosine(embeddings[i], embeddings[j])
+#             if distance < min_distance:
+#                 min_distance = distance
+#                 most_similar = (comments[i], comments[j])
+
+#     # Write the most similar pair to file
+#     with open(output_filename, 'w') as f:
+#         f.write(most_similar[0] + '\n')
+#         f.write(most_similar[1] + '\n')
+
+
+# Set the API base URL and token from environment variables
+AIPROXY_TOKEN = os.getenv('AIPROXY_TOKEN')
+API_BASE_URL = "https://aiproxy.sanand.workers.dev/openai/v1"
+
+def get_embedding(text):
+    """Get embedding for a given text using the API proxy."""
+    headers = {
+        "Authorization": f"Bearer {AIPROXY_TOKEN}",
+        "Content-Type": "application/json",
+    }
+    data = {
+        "model": "text-embedding-3-small",
+        "input": text,
+    }
+    with httpx.Client() as client:
+        response = client.post(
+            f"{API_BASE_URL}/embeddings",
+            headers=headers,
+            json=data,
+            timeout=30,
+        )
+    if response.status_code != 200:
+        raise Exception(f"Failed to get embedding: {response.status_code} - {response.text}")
+    return response.json()["data"][0]["embedding"]
+
+def cosine(vec1, vec2):
+    """Calculate cosine similarity between two vectors."""
+    return 1 - cosine_similarity([vec1], [vec2])[0][0]
+
 def A9(filename='/data/comments.txt', output_filename='/data/comments-similar.txt'):
+    """
+    Find similar comments from a text file and save them to an output file.
+
+    Args:
+        filename (str): Path to the input text file containing comments.
+        output_filename (str): Path to the output text file to save the most similar pair.
+    """
     # Read comments
     with open(filename, 'r') as f:
         comments = [line.strip() for line in f.readlines()]

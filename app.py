@@ -12,7 +12,9 @@
 #   "python-dotenv",
 #   "httpx",
 #   "markdown",
-#   "duckdb"
+#   "duckdb",
+#   "pillow",
+#   "scikit-learn",
 # ]
 # ///
 
