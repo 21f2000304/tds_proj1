@@ -23,4 +23,4 @@ COPY datagen.py /app
 COPY tasksA.py /app
 COPY tasksB.py /app
 # Explicitly set the correct binary path and use sh -c
-CMD ["/root/.local/bin/uv", "run", "app.py"]
+CMD ["/root/.local/bin/uv", "run", "app.py"]
